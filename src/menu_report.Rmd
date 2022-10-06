@@ -1,0 +1,202 @@
+---
+title: "menu_report"
+output: html_document
+knit: (function(input, ...) {
+    rmarkdown::render(
+      input,
+      output_dir = "../"
+    )
+  })
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidyr)
+library(janitor)
+library(here)
+library(DT)
+```
+
+# Data
+  
+  Below is a plain view of the raw data in menu.csv:
+  
+```{r, echo=FALSE}
+menu_df <- read_csv(here("data", "menu.csv"))
+menu_df %>%
+  clean_names() -> menu_df
+menu_df
+```
+  
+  
+  Another view of the raw data using an intractable table: 
+  
+  
+```{r, echo=FALSE}
+# show table using DT
+menu_df %>% 
+  datatable()
+```
+  
+  
+  The table below shows the number of elements in each category of foods: 
+  
+```{r, echo=FALSE}
+table(menu_df$category)
+```
+```{r, echo=FALSE}
+menu_df %>% 
+  group_by(category) %>% 
+  summarise(avg = mean(calories), 
+            stdev = sd(calories)
+            ) %>% 
+  knitr::kable(caption = "The calories location and spread of each category of foods.")
+```
+```{r, echo=FALSE}
+menu_df %>% 
+  group_by(category) -> menuCat_df
+menuCat_df %>% 
+  summarise(avgTFat = mean(total_fat), stdevTFat = sd(total_fat), 
+            avgSFat = mean(saturated_fat), stdevSFat = sd(saturated_fat),
+            avgCho = mean(cholesterol), stdevCho = sd(cholesterol), 
+            avgSo = mean(sodium), stdevSo = sd(sodium), 
+            avgCarb = mean(carbohydrates), stdevCarb = sd(carbohydrates), 
+            avgDF = mean(dietary_fiber), stdevDF = sd(dietary_fiber), 
+            avgSug = mean(sugars), stdevSug = sd(sugars), 
+            avgProt = mean(protein), stdevProt = sd(protein)
+            ) %>% 
+  knitr::kable(caption = "The nutrient value location and spread of each category of foods.")
+```
+```{r, echo=FALSE}
+menuCat_df %>% 
+  summarise(avgTFat = mean(total_fat_percent_daily_value), stdevTFat = sd(total_fat_percent_daily_value),
+            avgSFat = mean(saturated_fat_percent_daily_value), stdevSFat = sd(saturated_fat_percent_daily_value),
+            avgCho = mean(cholesterol_percent_daily_value), stdevCho = sd(cholesterol_percent_daily_value),
+            avgSo = mean(sodium_percent_daily_value), stdevSo = sd(sodium_percent_daily_value),
+            avgCarb = mean(carbohydrates_percent_daily_value), stdevCarb = sd(carbohydrates_percent_daily_value),
+            avgDF = mean(dietary_fiber_percent_daily_value), stdevDF = sd(dietary_fiber_percent_daily_value),
+            avgVa = mean(vitamin_a_percent_daily_value), stdevVa = sd(vitamin_a_percent_daily_value), 
+            avgVc = mean(vitamin_c_percent_daily_value), stdevVc = sd(vitamin_c_percent_daily_value), 
+            avgCalc = mean(calcium_percent_daily_value), stdevCalc = sd(calcium_percent_daily_value), 
+            avgIron = mean(iron_percent_daily_value), stdevIron = sd(iron_percent_daily_value)
+            ) %>% 
+  knitr::kable(caption = "The daily percent nutrient location and spread of each category of foods.")
+```
+# EDA
+
+
+  In the above tables we see some measure of location and spread of the data using non-robust methods to outliers. Below I show some graphs of the same data using more robust methods. 
+  Initially I'll plot the desnsity distribution of the calories
+  
+  
+```{r, echo=FALSE}
+ggplot(menu_df, aes(calories)) +
+  geom_density()
+```
+
+
+  We can see that the data is positively skewed, implying that the mean and standard deviation won't be appropriate measure for the current data. Therefore in the rest of the report I'll use more robust methods such as the median and quartiles to measure the location and spread of the variables. 
+  
+  
+```{r, echo=FALSE}
+ggplot(menuCat_df, aes(x = category, y = calories)) + 
+  geom_boxplot()
+```
+
+
+  Here we can see a box plot of the calories for each of the categories of foods. The boxplot shows that the majority of the data lies below 1000 cal with some outliers in the chicken and breakfast category. This shows that the 5 points are the main contributors for the positive skew. Since the properties of the foods are highly dependent on the category, the rest of the plots will be grouped by category. 
+  
+  
+```{r, echo=FALSE}
+ggplot(menuCat_df, aes(x= category, y = total_fat_percent_daily_value)) + 
+  geom_boxplot()
+```
+  
+  
+  Most meals (comb of sandwich drink and side) add up to around 100% of daily intake
+  
+  
+```{r, echo=FALSE}
+ggplot(menuCat_df, aes(x= category, y = cholesterol_percent_daily_value)) + 
+  geom_boxplot()
+```
+  
+  
+  Breakfast menu is very high in cholestrol 
+  
+  
+```{r, echo=FALSE}
+ggplot(menuCat_df, aes(x= category, y = sodium_percent_daily_value)) + 
+  geom_boxplot()
+```
+  
+  
+  Complete meal would add up to close to 100% daily sodium
+  
+  
+```{r, echo=FALSE}
+ggplot(menuCat_df, aes(x= category, y = carbohydrates_percent_daily_value)) + 
+  geom_boxplot()
+```
+  
+  
+  Complete meal would add up to around 50% of daily carb
+  
+  
+```{r, echo=FALSE}
+ggplot(menuCat_df, aes(x= category, y = dietary_fiber_percent_daily_value)) + 
+  geom_boxplot()
+```
+  
+  
+  Complete meal would add up to around  25% of daily intake
+  
+  
+```{r, echo=FALSE}
+ggplot(menuCat_df, aes(x= category, y = sugars)) + 
+  geom_boxplot()
+```
+  
+  
+  Assuming grams units coffee&tea, deserts, and smoothies&shakes have largest values 
+  
+  
+```{r, echo=FALSE}
+ggplot(menuCat_df, aes(x= category, y = protein)) + 
+  geom_boxplot()
+```
+  
+  
+  High protein value in complete meals 
+  
+  
+```{r, echo=FALSE}
+ggplot(menuCat_df, aes(x= category, y = vitamin_c_percent_daily_value)) + 
+  geom_boxplot()
+```
+  
+  
+  Some drinks have high vitamin c value
+  
+  
+```{r, echo=FALSE}
+ggplot(menuCat_df, aes(x= category, y = calcium_percent_daily_value)) + 
+  geom_boxplot()
+```
+  
+  Smoothies, and coffee have high value calcium (since most have milk and other forms of dairy)
+  
+  
+```{r, echo=FALSE}
+ggplot(menuCat_df, aes(x= category, y = iron_percent_daily_value)) + 
+  geom_boxplot()
+```
+
+  
+  Red meats have high iron values
+
+
+# Conclusion
+  Due to the time sensitive nature of the assignment I couldn't analyse the data as much as I wanted to. Regardless, the data shows that each complete meal (sandwich/salad, drink, and side/dessert) is very high in calories, fat, and sodium. Some categories are rich in nutrients while others aren't; The breakfast menu is very high in cholesterol, dairy containing drinks have large amounts of calcium, sandwiches (beef&pork, breakfast, and chicken&fish), are high in sodium, and salads are relatively high in fibers. Overall, eating a complete meal from Mcdonalds, will give you an excess amount of relatively unhealthy nutrients while also giving you a decent amount of necessary nutrients. 
